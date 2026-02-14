@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>VSBM 8K MELTDOWN</title>
+<style>
+body { margin:0; overflow:hidden; background:black; }
+canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="c1"></canvas>
+
+<script>
+var canvas = document.getElementById("c1");
+
+
+canvas.width  = 7680;
+canvas.height = 4320;
+
+// Scale visually to fit screen
+canvas.style.width  = "100vw";
+canvas.style.height = "100vh";
+
+var gl = canvas.getContext("webgl");
+
+var positions = [
+-1,-1,0, 1,-1,0, 1,1,0,
+-1,-1,0, 1,1,0, -1,1,0
+];
+
+var VSHADER =
+"precision highp float;\n"+
+"attribute vec4 position;\n"+
+"varying vec2 uv;\n"+
+"void main(){\n"+
+"gl_Position=position;\n"+
+"uv=position.xy;\n"+
+"}";
+
+var FSHADER =
+"#define RAY_STEPS 16000\n"+
+"#define KERNEL_ITERS 96\n"+
+"precision highp float;\n"+
+"varying vec2 uv;\n"+
+"uniform float time;\n"+
+"const float stepSize=0.00025;\n"+
+
+"float kernal(vec3 p){\n"+
+"vec3 a=p;\n"+
+"float b,c,d;\n"+
+"for(int i=0;i<KERNEL_ITERS;i++){\n"+
+"b=length(a);\n"+
+"c=atan(a.y,a.x)*30.0;\n"+
+"d=acos(a.z/b)*30.0;\n"+
+"b=pow(b,18.0);\n"+
+"a=vec3(b*sin(d)*cos(c),b*sin(d)*sin(c),b*cos(d))+p;\n"+
+"a+=vec3(\n"+
+"sin(a.x*25.0+time),\n"+
+"cos(a.y*25.0-time),\n"+
+"sin(a.z*25.0+time*0.5)\n"+
+")*0.25;\n"+
+"}\n"+
+"float r=dot(a,a);\n"+
+"for(int j=0;j<12;j++){\n"+
+"r+=sin(r*40.0)*0.2;\n"+
+"r=abs(r);\n"+
+"}\n"+
+"return 10.0-r;\n"+
+"}\n"+
+
+"void main(){\n"+
+"vec3 origin=vec3(0.0,0.0,5.0);\n"+
+"vec3 dir=normalize(vec3(uv,-1.5));\n"+
+"float angle=time*0.3;\n"+
+"mat2 rot=mat2(cos(angle),-sin(angle),sin(angle),cos(angle));\n"+
+"dir.xz=rot*dir.xz;\n"+
+"origin.xz=rot*origin.xz;\n"+
+"vec3 color=vec3(0.0);\n"+
+"float t=0.0;\n"+
+
+"for(int k=0;k<RAY_STEPS;k++){\n"+
+"vec3 p=origin+dir*t;\n"+
+
+"float v1=kernal(p);\n"+
+"float v2=kernal(p+vec3(0.001));\n"+
+"float v3=kernal(p-vec3(0.001));\n"+
+"float v4=kernal(p*1.002);\n"+
+"float v5=kernal(p*0.998);\n"+
+"float v6=kernal(p+vec3(sin(time))*0.002);\n"+
+
+"float v=(v1+v2+v3+v4+v5+v6)/6.0;\n"+
+
+"color+=vec3(\n"+
+"sin(v*7.0),\n"+
+"cos(v*9.0),\n"+
+"sin(v*13.0)\n"+
+")*0.0004;\n"+
+
+"t+=stepSize;\n"+
+"}\n"+
+
+"gl_FragColor=vec4(abs(color)*8.0,1.0);\n"+
+"}";
+
+var vs=gl.createShader(gl.VERTEX_SHADER);
+var fs=gl.createShader(gl.FRAGMENT_SHADER);
+var prog=gl.createProgram();
+
+gl.shaderSource(vs,VSHADER);
+gl.compileShader(vs);
+
+gl.shaderSource(fs,FSHADER);
+gl.compileShader(fs);
+
+gl.attachShader(prog,vs);
+gl.attachShader(prog,fs);
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+var pos=gl.getAttribLocation(prog,"position");
+var timeLoc=gl.getUniformLocation(prog,"time");
+
+var buf=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+gl.vertexAttribPointer(pos,3,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(pos);
+
+// 🔥 FULL 8K VIEWPORT
+gl.viewport(0,0,canvas.width,canvas.height);
+
+function render(t){
+gl.uniform1f(timeLoc,t*0.001);
+gl.drawArrays(gl.TRIANGLES,0,6);
+requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

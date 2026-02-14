@@ -1,91 +1,94 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0">
-    <title>HEAVIER·INFINITE·5000x</title>
+    <meta name="viewport" content="user-scalable=no">
+    <title>volumeshader_bm · 5x HEAVIER</title>
     <style>
         body {
+            background: #131115;
             margin: 0;
             overflow: hidden;
-            background: #000000;
+        }
+        #c1 {
+            background: #fbf7fe;
+            display: block;
         }
         #main {
-            transform-origin: 0 0;
+            transform-origin: 0px 0px;
             position: fixed;
-            left: 0;
-            top: 0;
-            filter: drop-shadow(0 0 40px #ff44ee);
+            left: 0px;
+            top: 0px;
         }
-        canvas {
-            display: block;
-            box-shadow: 0 0 150px #bb44ff;
-        }
-        /* no config button — pure weight */
     </style>
 </head>
-<body>
+<body style="overflow-x:hidden;overflow-y:hidden">
 <div id="main">
-    <canvas id="c1" width="1024" height="1024"></canvas>
+    <canvas id="c1" width="1024" height="1024">
+        <span>canvas not supported</span>
+    </canvas>
 </div>
 
 <script>
-    // direct implementation — 5000x heavier, no popup, no toggle
+    // ORIGINAL CODE – only made 5x HEAVIER: more iterations, higher frequencies, denser sampling
 
     let cx, cy;
-    let glposition, glright, glforward, glup, glorigin, glx, gly, gllen;
-    let canvas, gl;
+    let glposition;
+    let glright;
+    let glforward;
+    let glup;
+    let glorigin;
+    let glx;
+    let gly;
+    let gllen;
+    let canvas;
+    let gl;
     let date = new Date();
     let t1 = date.getTime();
     let mx = 0, my = 0, mx1 = 0, my1 = 0, lasttimen = 0;
     let ml = 0, mr = 0, mm = 0;
     let len = 1.6;
-    let ang1 = 2.8, ang2 = 0.4;
-    let cenx = 0.0, ceny = 0.0, cenz = 0.0;
+    let ang1 = 2.8;
+    let ang2 = 0.4;
+    let cenx = 0.0;
+    let ceny = 0.0;
+    let cenz = 0.0;
 
-    // ==================== 5000x HEAVIER KERNEL ====================
-    // density: infinite recursion + massive trig stacks + higher order terms
-    // weight: more iterations, more operations per sample, escape threshold increased
-    let KERNEL = `float kernal(vec3 ver) {
-    vec3 a = ver;
-    float b, c, d, e, f;   // extra weight
-    // 5000x heavier means 20 iterations + extra trigonometric mass
-    for (int i = 0; i < 20; i++) {
-        b = length(a);
-        // multi-trig heavy nucleus: atan, asin, acos, sin, cos — all stacked
-        c = atan(a.y, a.x) * 120.0 + sin(b * 300.0) * 5.0;           // insane angular repetition
-        d = asin(a.z / (b + 0.0005)) * 130.0 + cos(b * 400.0) * 5.0; // heavier singularity
-        e = acos(a.x / (b + 0.0005)) * 140.0 + sin(b * 500.0) * 5.0; // third trig dimension
-        f = sin(b * 1000.0) * 3.0 + cos(b * 800.0) * 3.0;            // micro-warp
-
-        // hypercompression: power with variable exponent, plus massive cross terms
-        b = pow(b, 6.0 + sin(b * 70.0) * 2.5 + cos(b * 60.0) * 2.5);
-
-        // heavy transform: fold using all angles
-        a = vec3(
-            b * sin(d) * cos(c) + cos(e) * 2.2 + f * 1.3,
-            b * sin(d) * sin(c) + sin(e) * 2.2 + f * 1.7,
-            b * cos(d) + cos(e) * 2.2 + sin(f * 90.0) * 1.9
-        ) + ver * 0.85;   // stronger feedback
-
-        if (b > 24.0) break;   // higher escape = heavier cloud
+    // ========== 5x HEAVIER KERNEL ==========
+    // original structure but with:
+    // - more iterations (5 → 9)
+    // - higher frequency multipliers (8→40, 8→40)
+    // - extra trig (cos added)
+    // - return modulation amplified
+    let KERNEL = `float kernal(vec3 ver){
+    vec3 a;
+    float b,c,d,e;
+    a=ver;
+    for(int i=0;i<9;i++){                    // 5 -> 9  (almost double)
+        b=length(a);
+        c=atan(a.y,a.x)*40.0;                 // 8 -> 40
+        e=1.0/b;
+        d=acos(a.z/b)*40.0;                   // 8 -> 40
+        b=pow(b,8.0 + sin(b*15.0)*2.0);        // extra exponent warble
+        a=vec3(b*sin(d)*cos(c) + cos(b*12.0)*0.3,   // extra cos twist
+               b*sin(d)*sin(c) + sin(b*16.0)*0.3,
+               b*cos(d) + cos(b*20.0)*0.3) + ver;
+        if(b>8.0) break;
     }
-    // return value with extremely sharp gradient and 5000x density contrast
-    // heavy metal color function: chaotic return
-    return 8.0 - (a.x*a.x*1.2 + a.y*a.y*1.4 + a.z*a.z*1.6) 
-           + sin(a.x * 200.0) * 2.5 + cos(a.y * 250.0) * 2.5 + sin(a.z * 300.0) * 2.5
-           + sin(a.x * a.y * 40.0) * 1.8 + cos(a.y * a.z * 45.0) * 1.8;
+    return 5.0 - (a.x*a.x + a.y*a.y*1.2 + a.z*a.z*1.2)  // steeper gradient
+           + sin(a.x*30.0)*0.8 + cos(a.y*30.0)*0.8 + sin(a.z*40.0)*0.8;  // more ripple
 }`;
 
-    let vertshade, fragshader, shaderProgram;
+    let vertshade;
+    let fragshader;
+    let shaderProgram;
 
     function ontimer() {
-        ang1 += 0.018;  // even faster rotation — heavier motion blur
+        ang1 += 0.01;
         draw();
         window.requestAnimationFrame(ontimer);
     }
 
-    // event handlers (same robust interface)
+    // --- event handlers (unchanged, original) ---
     document.addEventListener("mousedown", function (ev) {
         let oEvent = ev || event;
         if (oEvent.button == 0) { ml = 1; mm = 0; }
@@ -194,142 +197,170 @@
         document.getElementById("main").style.height = 1024 + "px";
         document.getElementById("main").style.transform = "scale(" + cx / 1024 + "," + cy / 1024 + ")";
         let positions = [-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0];
-        let VSHADER_SOURCE = `#version 100 
-precision highp float;
-attribute vec4 position;
-varying vec3 dir, localdir;
-uniform vec3 right, forward, up, origin;
-uniform float x,y;
-void main() {
-   gl_Position = position;
-   dir = forward + right * position.x*x + up * position.y*y;
-   localdir.x = position.x*x;
-   localdir.y = position.y*y;
-   localdir.z = -1.0;
-}`;
 
-        // ========== 5000x HEAVIER FRAGMENT ==========
-        // heavier step count, heavier solver, heavier color, more specular mass
-        let FSHADER_SOURCE = `#version 100 
-#define PI 3.14159265358979324
-#define M_L 0.3819660113
-#define M_R 0.6180339887
-#define MAXR 10
-#define SOLVER 12
-precision highp float;
-float kernal(vec3 ver);
-uniform vec3 right, forward, up, origin;
-varying vec3 dir, localdir;
-uniform float len;
-vec3 ver;
-int sign;
-float v, v1, v2;
-float r1, r2, r3, r4, m1, m2, m3, m4;
-vec3 n, reflect;
-const float step = 0.00085;   // super fine grain → heavier geometry
-vec3 color;
+        // --- original vertex shader (exactly) ---
+        let VSHADER_SOURCE =
+            "#version 100 \n" +
+            "precision highp float;\n" +
+            "attribute vec4 position;" +
+            "varying vec3 dir, localdir;" +
+            "uniform vec3 right, forward, up, origin;" +
+            "uniform float x,y;" +
+            "void main() {" +
+            "   gl_Position = position; " +
+            "   dir = forward + right * position.x*x + up * position.y*y;" +
+            "   localdir.x = position.x*x;" +
+            "   localdir.y = position.y*y;" +
+            "   localdir.z = -1.0;" +
+            "} ";
 
-void main() {
-   color = vec3(0.0);
-   sign = 0;
-   v1 = kernal(origin + dir * (step*len));
-   v2 = kernal(origin);
-   for (int k = 2; k < 3000; k++) {   // +1000 steps = more weight
-      ver = origin + dir * (step*len*float(k));
-      v = kernal(ver);
-      if (v > 0.0 && v1 < 0.0) {
-         r1 = step * len*float(k-1);
-         r2 = step * len*float(k);
-         m1 = kernal(origin + dir * r1);
-         m2 = kernal(origin + dir * r2);
-         for (int l = 0; l < SOLVER; l++) {
-            r3 = r1 * 0.5 + r2 * 0.5;
-            m3 = kernal(origin + dir * r3);
-            if (m3 > 0.0) { r2 = r3; m2 = m3; }
-            else { r1 = r3; m1 = m3; }
-         }
-         if (r3 < 2.0 * len) { sign=1; break; }
-      }
-      if (v < v1 && v1 > v2 && v1 < 0.0 && (v1*2.0 > v || v1 * 2.0 > v2)) {
-         r1 = step * len*float(k-2);
-         r2 = step * len*(float(k) - 2.0 + 2.0*M_L);
-         r3 = step * len*(float(k) - 2.0 + 2.0*M_R);
-         r4 = step * len*float(k);
-         m2 = kernal(origin + dir * r2);
-         m3 = kernal(origin + dir * r3);
-         for (int l = 0; l < MAXR; l++) {
-            if (m2 > m3) {
-               r4 = r3; r3 = r2;
-               r2 = r4 * M_L + r1 * M_R;
-               m3 = m2;
-               m2 = kernal(origin + dir * r2);
-            } else {
-               r1 = r2; r2 = r3;
-               r3 = r4 * M_R + r1 * M_L;
-               m2 = m3;
-               m3 = kernal(origin + dir * r3);
-            }
-         }
-         if (m2 > 0.0) {
-            r1 = step * len*float(k-2);
-            r2 = r2;
-            m1 = kernal(origin + dir * r1);
-            m2 = kernal(origin + dir * r2);
-            for (int l = 0; l < SOLVER; l++) {
-               r3 = r1 * 0.5 + r2 * 0.5;
-               m3 = kernal(origin + dir * r3);
-               if (m3 > 0.0) { r2 = r3; m2 = m3; }
-               else { r1 = r3; m1 = m3; }
-            }
-            if (r3 < 2.0 * len && r3 > step*len) { sign=1; break; }
-         } else if (m3 > 0.0) {
-            r1 = step * len*float(k-2);
-            r2 = r3;
-            m1 = kernal(origin + dir * r1);
-            m2 = kernal(origin + dir * r2);
-            for (int l = 0; l < SOLVER; l++) {
-               r3 = r1 * 0.5 + r2 * 0.5;
-               m3 = kernal(origin + dir * r3);
-               if (m3 > 0.0) { r2 = r3; m2 = m3; }
-               else { r1 = r3; m1 = m3; }
-            }
-            if (r3 < 2.0 * len && r3 > step*len) { sign=1; break; }
-         }
-      }
-      v2 = v1;
-      v1 = v;
-   }
-   if (sign == 1) {
-      ver = origin + dir * r3;
-      float r1 = ver.x*ver.x + ver.y*ver.y + ver.z*ver.z;
-
-      n.x = kernal(ver - right * (r3*0.00009)) - kernal(ver + right * (r3*0.00009));
-      n.y = kernal(ver - up * (r3*0.00009)) - kernal(ver + up * (r3*0.00009));
-      n.z = kernal(ver + forward * (r3*0.00009)) - kernal(ver - forward * (r3*0.00009));
-
-      float lenN = length(n);
-      if (lenN > 0.0) n = n / lenN;
-      vec3 loc = normalize(localdir);
-      reflect = n * (-2.0*dot(loc, n)) + loc;
-
-      // heavier specular, higher harmonics
-      float spec = dot(reflect, vec3(0.276, 0.920, 0.276));
-      float diff = dot(n, vec3(0.276, 0.920, 0.276));
-      spec = max(0.0, spec);
-      spec = pow(spec, 1.8) * 2.4;   // metallic burst
-      float light = spec * 0.8 + diff * 0.5 + 0.5;
-
-      // 5000x color mass: super fast oscillations, higher amplitude
-      vec3 col;
-      col.r = sin(r1 * 110.0) * 1.2 + 1.0;
-      col.g = sin(r1 * 110.0 + 2.8) * 1.2 + 1.0;
-      col.b = sin(r1 * 110.0 - 2.8) * 1.2 + 1.0;
-
-      color = col * light * 1.8;
-      color = clamp(color, 0.0, 1.5);  // extra bright
-   }
-   gl_FragColor = vec4(color.x, color.y, color.z, 1.0);
-}`;
+        // --- fragment shader: almost original, but step smaller and max steps increased for 5x weight ---
+        let FSHADER_SOURCE =
+            "#version 100 \n" +
+            "#define PI 3.14159265358979324\n" +
+            "#define M_L 0.3819660113\n" +
+            "#define M_R 0.6180339887\n" +
+            "#define MAXR 8\n" +
+            "#define SOLVER 8\n" +
+            "precision highp float;\n" +
+            "float kernal(vec3 ver)\n;" +
+            "uniform vec3 right, forward, up, origin;\n" +
+            "varying vec3 dir, localdir;\n" +
+            "uniform float len;\n" +
+            "vec3 ver;\n" +
+            "int sign;"+
+            "float v, v1, v2;\n" +
+            "float r1, r2, r3, r4, m1, m2, m3, m4;\n" +
+            "vec3 n, reflect;\n" +
+            "const float step = 0.0012;            // slightly finer than original (was 0.002)\n" +   // 5x heavier: smaller steps
+            "vec3 color;\n" +
+            "void main() {\n" +
+            "   color.r=0.0;\n" +
+            "   color.g=0.0;\n" +
+            "   color.b=0.0;\n" +
+            "   sign=0;"+
+            "   v1 = kernal(origin + dir * (step*len));\n" +
+            "   v2 = kernal(origin);\n" +
+            "   for (int k = 2; k < 2002; k++) {      // 1002 -> 2002 = double steps = heavier\n" +
+            "      ver = origin + dir * (step*len*float(k));\n" +
+            "      v = kernal(ver);\n" +
+            "      if (v > 0.0 && v1 < 0.0) {\n" +
+            "         r1 = step * len*float(k - 1);\n" +
+            "         r2 = step * len*float(k);\n" +
+            "         m1 = kernal(origin + dir * r1);\n" +
+            "         m2 = kernal(origin + dir * r2);\n" +
+            "         for (int l = 0; l < SOLVER; l++) {\n" +
+            "            r3 = r1 * 0.5 + r2 * 0.5;\n" +
+            "            m3 = kernal(origin + dir * r3);\n" +
+            "            if (m3 > 0.0) {\n" +
+            "               r2 = r3;\n" +
+            "               m2 = m3;\n" +
+            "            }\n" +
+            "            else {\n" +
+            "               r1 = r3;\n" +
+            "               m1 = m3;\n" +
+            "            }\n" +
+            "         }\n" +
+            "         if (r3 < 2.0 * len) {\n" +
+            "               sign=1;" +
+            "            break;\n" +
+            "         }\n" +
+            "      }\n" +
+            "      if (v < v1 && v1 > v2 && v1 < 0.0 && (v1*2.0 > v || v1 * 2.0 > v2)) {\n" +
+            "         r1 = step * len*float(k - 2);\n" +
+            "         r2 = step * len*(float(k) - 2.0 + 2.0*M_L);\n" +
+            "         r3 = step * len*(float(k) - 2.0 + 2.0*M_R);\n" +
+            "         r4 = step * len*float(k);\n" +
+            "         m2 = kernal(origin + dir * r2);\n" +
+            "         m3 = kernal(origin + dir * r3);\n" +
+            "         for (int l = 0; l < MAXR; l++) {\n" +
+            "            if (m2 > m3) {\n" +
+            "               r4 = r3;\n" +
+            "               r3 = r2;\n" +
+            "               r2 = r4 * M_L + r1 * M_R;\n" +
+            "               m3 = m2;\n" +
+            "               m2 = kernal(origin + dir * r2);\n" +
+            "            }\n" +
+            "            else {\n" +
+            "               r1 = r2;\n" +
+            "               r2 = r3;\n" +
+            "               r3 = r4 * M_R + r1 * M_L;\n" +
+            "               m2 = m3;\n" +
+            "               m3 = kernal(origin + dir * r3);\n" +
+            "            }\n" +
+            "         }\n" +
+            "         if (m2 > 0.0) {\n" +
+            "            r1 = step * len*float(k - 2);\n" +
+            "            r2 = r2;\n" +
+            "            m1 = kernal(origin + dir * r1);\n" +
+            "            m2 = kernal(origin + dir * r2);\n" +
+            "            for (int l = 0; l < SOLVER; l++) {\n" +
+            "               r3 = r1 * 0.5 + r2 * 0.5;\n" +
+            "               m3 = kernal(origin + dir * r3);\n" +
+            "               if (m3 > 0.0) {\n" +
+            "                  r2 = r3;\n" +
+            "                  m2 = m3;\n" +
+            "               }\n" +
+            "               else {\n" +
+            "                  r1 = r3;\n" +
+            "                  m1 = m3;\n" +
+            "               }\n" +
+            "            }\n" +
+            "            if (r3 < 2.0 * len && r3> step*len) {\n" +
+            "                   sign=1;" +
+            "               break;\n" +
+            "            }\n" +
+            "         }\n" +
+            "         else if (m3 > 0.0) {\n" +
+            "            r1 = step * len*float(k - 2);\n" +
+            "            r2 = r3;\n" +
+            "            m1 = kernal(origin + dir * r1);\n" +
+            "            m2 = kernal(origin + dir * r2);\n" +
+            "            for (int l = 0; l < SOLVER; l++) {\n" +
+            "               r3 = r1 * 0.5 + r2 * 0.5;\n" +
+            "               m3 = kernal(origin + dir * r3);\n" +
+            "               if (m3 > 0.0) {\n" +
+            "                  r2 = r3;\n" +
+            "                  m2 = m3;\n" +
+            "               }\n" +
+            "               else {\n" +
+            "                  r1 = r3;\n" +
+            "                  m1 = m3;\n" +
+            "               }\n" +
+            "            }\n" +
+            "            if (r3 < 2.0 * len && r3> step*len) {\n" +
+            "                   sign=1;" +
+            "               break;\n" +
+            "            }\n" +
+            "         }\n" +
+            "      }\n" +
+            "      v2 = v1;\n" +
+            "      v1 = v;\n" +
+            "   }\n" +
+            "   if (sign==1) {\n" +
+            "      ver = origin + dir*r3 ;\n" +
+            "       r1=ver.x*ver.x+ver.y*ver.y+ver.z*ver.z;" +
+            "      n.x = kernal(ver - right * (r3*0.00025)) - kernal(ver + right * (r3*0.00025));\n" +
+            "      n.y = kernal(ver - up * (r3*0.00025)) - kernal(ver + up * (r3*0.00025));\n" +
+            "      n.z = kernal(ver + forward * (r3*0.00025)) - kernal(ver - forward * (r3*0.00025));\n" +
+            "      r3 = n.x*n.x+n.y*n.y+n.z*n.z;\n" +
+            "      n = n * (1.0 / sqrt(r3));\n" +
+            "      ver = localdir;\n" +
+            "      r3 = ver.x*ver.x+ver.y*ver.y+ver.z*ver.z;\n" +
+            "      ver = ver * (1.0 / sqrt(r3));\n" +
+            "      reflect = n * (-2.0*dot(ver, n)) + ver;\n" +
+            "      r3 = reflect.x*0.276+reflect.y*0.920+reflect.z*0.276;\n" +
+            "      r4 = n.x*0.276+n.y*0.920+n.z*0.276;\n" +
+            "      r3 = max(0.0,r3);\n" +
+            "      r3 = r3 * r3 * r3 * r3;\n" +            // keep original specular
+            "      r3 = r3 * 0.45 + r4 * 0.25 + 0.3;\n" +
+            "      n.x = sin(r1*20.0)*0.7+0.8;\n" +        // higher frequency than original (10→20)
+            "      n.y = sin(r1*20.0+2.05)*0.7+0.8;\n" +
+            "      n.z = sin(r1*20.0-2.05)*0.7+0.8;\n" +
+            "      color = n*r3;\n" +
+            "   }\n" +
+            "   gl_FragColor = vec4(color.x, color.y, color.z, 1.0);" +
+            "}";
 
         canvas = document.getElementById('c1');
         gl = canvas.getContext('webgl');
@@ -358,7 +389,6 @@ void main() {
         glx = gl.getUniformLocation(shaderProgram, 'x');
         gly = gl.getUniformLocation(shaderProgram, 'y');
         gllen = gl.getUniformLocation(shaderProgram, 'len');
-
         let buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);

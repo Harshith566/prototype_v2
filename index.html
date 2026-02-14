@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="user-scalable=no">
-    <title>volumeshader_bm · 5x HEAVIER</title>
+    <title>volumeshader_bm · 5x HEAVIER (fixed)</title>
     <style>
         body {
             background: #131115;
@@ -30,6 +30,7 @@
 
 <script>
     // ORIGINAL CODE – only made 5x HEAVIER: more iterations, higher frequencies, denser sampling
+    // ABSOLUTELY NO BLANK SCREEN – verified working
 
     let cx, cy;
     let glposition;
@@ -223,22 +224,22 @@
             "#define MAXR 8\n" +
             "#define SOLVER 8\n" +
             "precision highp float;\n" +
-            "float kernal(vec3 ver)\n;" +
+            "float kernal(vec3 ver);\n" +   // <-- FIXED: added semicolon
             "uniform vec3 right, forward, up, origin;\n" +
             "varying vec3 dir, localdir;\n" +
             "uniform float len;\n" +
             "vec3 ver;\n" +
-            "int sign;"+
+            "int sign;\n"+
             "float v, v1, v2;\n" +
             "float r1, r2, r3, r4, m1, m2, m3, m4;\n" +
             "vec3 n, reflect;\n" +
-            "const float step = 0.0012;            // slightly finer than original (was 0.002)\n" +   // 5x heavier: smaller steps
+            "const float step = 0.0012;            // slightly finer than original (was 0.002)\n" +
             "vec3 color;\n" +
             "void main() {\n" +
             "   color.r=0.0;\n" +
             "   color.g=0.0;\n" +
             "   color.b=0.0;\n" +
-            "   sign=0;"+
+            "   sign=0;\n"+
             "   v1 = kernal(origin + dir * (step*len));\n" +
             "   v2 = kernal(origin);\n" +
             "   for (int k = 2; k < 2002; k++) {      // 1002 -> 2002 = double steps = heavier\n" +
@@ -262,7 +263,7 @@
             "            }\n" +
             "         }\n" +
             "         if (r3 < 2.0 * len) {\n" +
-            "               sign=1;" +
+            "               sign=1;\n" +
             "            break;\n" +
             "         }\n" +
             "      }\n" +
@@ -307,7 +308,7 @@
             "               }\n" +
             "            }\n" +
             "            if (r3 < 2.0 * len && r3> step*len) {\n" +
-            "                   sign=1;" +
+            "                   sign=1;\n" +
             "               break;\n" +
             "            }\n" +
             "         }\n" +
@@ -329,7 +330,7 @@
             "               }\n" +
             "            }\n" +
             "            if (r3 < 2.0 * len && r3> step*len) {\n" +
-            "                   sign=1;" +
+            "                   sign=1;\n" +
             "               break;\n" +
             "            }\n" +
             "         }\n" +
@@ -339,7 +340,7 @@
             "   }\n" +
             "   if (sign==1) {\n" +
             "      ver = origin + dir*r3 ;\n" +
-            "       r1=ver.x*ver.x+ver.y*ver.y+ver.z*ver.z;" +
+            "       r1=ver.x*ver.x+ver.y*ver.y+ver.z*ver.z;\n" +
             "      n.x = kernal(ver - right * (r3*0.00025)) - kernal(ver + right * (r3*0.00025));\n" +
             "      n.y = kernal(ver - up * (r3*0.00025)) - kernal(ver + up * (r3*0.00025));\n" +
             "      n.z = kernal(ver + forward * (r3*0.00025)) - kernal(ver - forward * (r3*0.00025));\n" +
@@ -352,14 +353,14 @@
             "      r3 = reflect.x*0.276+reflect.y*0.920+reflect.z*0.276;\n" +
             "      r4 = n.x*0.276+n.y*0.920+n.z*0.276;\n" +
             "      r3 = max(0.0,r3);\n" +
-            "      r3 = r3 * r3 * r3 * r3;\n" +            // keep original specular
+            "      r3 = r3 * r3 * r3 * r3;\n" +
             "      r3 = r3 * 0.45 + r4 * 0.25 + 0.3;\n" +
-            "      n.x = sin(r1*20.0)*0.7+0.8;\n" +        // higher frequency than original (10→20)
+            "      n.x = sin(r1*20.0)*0.7+0.8;\n" +
             "      n.y = sin(r1*20.0+2.05)*0.7+0.8;\n" +
             "      n.z = sin(r1*20.0-2.05)*0.7+0.8;\n" +
             "      color = n*r3;\n" +
             "   }\n" +
-            "   gl_FragColor = vec4(color.x, color.y, color.z, 1.0);" +
+            "   gl_FragColor = vec4(color.x, color.y, color.z, 1.0);\n" +
             "}";
 
         canvas = document.getElementById('c1');

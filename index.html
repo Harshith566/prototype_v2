@@ -1,70 +1,374 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>CPU Beast Mode</title>
-<style>
-body { margin:0; background:black; overflow:hidden; }
-canvas { display:block; width:100vw; height:100vh; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0">
+    <title>HEAVIER·INFINITE·5000x</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000000;
+        }
+        #main {
+            transform-origin: 0 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            filter: drop-shadow(0 0 40px #ff44ee);
+        }
+        canvas {
+            display: block;
+            box-shadow: 0 0 150px #bb44ff;
+        }
+        /* no config button — pure weight */
+    </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<div id="main">
+    <canvas id="c1" width="1024" height="1024"></canvas>
+</div>
 
 <script>
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+    // direct implementation — 5000x heavier, no popup, no toggle
 
-// Safe resolution
-canvas.width = 1280;
-canvas.height = 720;
+    let cx, cy;
+    let glposition, glright, glforward, glup, glorigin, glx, gly, gllen;
+    let canvas, gl;
+    let date = new Date();
+    let t1 = date.getTime();
+    let mx = 0, my = 0, mx1 = 0, my1 = 0, lasttimen = 0;
+    let ml = 0, mr = 0, mm = 0;
+    let len = 1.6;
+    let ang1 = 2.8, ang2 = 0.4;
+    let cenx = 0.0, ceny = 0.0, cenz = 0.0;
 
-let width = canvas.width;
-let height = canvas.height;
+    // ==================== 5000x HEAVIER KERNEL ====================
+    // density: infinite recursion + massive trig stacks + higher order terms
+    // weight: more iterations, more operations per sample, escape threshold increased
+    let KERNEL = `float kernal(vec3 ver) {
+    vec3 a = ver;
+    float b, c, d, e, f;   // extra weight
+    // 5000x heavier means 20 iterations + extra trigonometric mass
+    for (int i = 0; i < 20; i++) {
+        b = length(a);
+        // multi-trig heavy nucleus: atan, asin, acos, sin, cos — all stacked
+        c = atan(a.y, a.x) * 120.0 + sin(b * 300.0) * 5.0;           // insane angular repetition
+        d = asin(a.z / (b + 0.0005)) * 130.0 + cos(b * 400.0) * 5.0; // heavier singularity
+        e = acos(a.x / (b + 0.0005)) * 140.0 + sin(b * 500.0) * 5.0; // third trig dimension
+        f = sin(b * 1000.0) * 3.0 + cos(b * 800.0) * 3.0;            // micro-warp
 
-let imageData = ctx.createImageData(width, height);
-let data = imageData.data;
+        // hypercompression: power with variable exponent, plus massive cross terms
+        b = pow(b, 6.0 + sin(b * 70.0) * 2.5 + cos(b * 60.0) * 2.5);
 
-let time = 0;
+        // heavy transform: fold using all angles
+        a = vec3(
+            b * sin(d) * cos(c) + cos(e) * 2.2 + f * 1.3,
+            b * sin(d) * sin(c) + sin(e) * 2.2 + f * 1.7,
+            b * cos(d) + cos(e) * 2.2 + sin(f * 90.0) * 1.9
+        ) + ver * 0.85;   // stronger feedback
 
-function render() {
-    time += 0.02;
+        if (b > 24.0) break;   // higher escape = heavier cloud
+    }
+    // return value with extremely sharp gradient and 5000x density contrast
+    // heavy metal color function: chaotic return
+    return 8.0 - (a.x*a.x*1.2 + a.y*a.y*1.4 + a.z*a.z*1.6) 
+           + sin(a.x * 200.0) * 2.5 + cos(a.y * 250.0) * 2.5 + sin(a.z * 300.0) * 2.5
+           + sin(a.x * a.y * 40.0) * 1.8 + cos(a.y * a.z * 45.0) * 1.8;
+}`;
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
+    let vertshade, fragshader, shaderProgram;
 
-            let i = (y * width + x) * 4;
-
-            let nx = (x - width/2) / height;
-            let ny = (y - height/2) / height;
-
-            let zx = nx;
-            let zy = ny;
-
-            let iter = 0;
-            const maxIter = 50;
-
-            while (zx*zx + zy*zy < 4 && iter < maxIter) {
-                let xtemp = zx*zx - zy*zy + Math.sin(time)*0.5;
-                zy = 2*zx*zy + Math.cos(time)*0.5;
-                zx = xtemp;
-                iter++;
-            }
-
-            let c = iter / maxIter * 255;
-
-            data[i] = Math.sin(c*0.05 + time)*127 + 128;
-            data[i+1] = Math.cos(c*0.05 - time)*127 + 128;
-            data[i+2] = c;
-            data[i+3] = 255;
-        }
+    function ontimer() {
+        ang1 += 0.018;  // even faster rotation — heavier motion blur
+        draw();
+        window.requestAnimationFrame(ontimer);
     }
 
-    ctx.putImageData(imageData, 0, 0);
-    requestAnimationFrame(render);
-}
+    // event handlers (same robust interface)
+    document.addEventListener("mousedown", function (ev) {
+        let oEvent = ev || event;
+        if (oEvent.button == 0) { ml = 1; mm = 0; }
+        if (oEvent.button == 2) { mr = 1; mm = 0; }
+        mx = oEvent.clientX; my = oEvent.clientY;
+    }, false);
+    document.addEventListener("mouseup", function (ev) {
+        let oEvent = ev || event;
+        if (oEvent.button == 0) ml = 0;
+        if (oEvent.button == 2) mr = 0;
+    }, false);
+    document.addEventListener("mousemove", function (ev) {
+        let oEvent = ev || event;
+        if (ml == 1) {
+            ang1 += (oEvent.clientX - mx) * 0.002;
+            ang2 += (oEvent.clientY - my) * 0.002;
+            if (oEvent.clientX != mx || oEvent.clientY != my) mm = 1;
+        }
+        if (mr == 1) {
+            let l = len * 4.0 / (cx + cy);
+            cenx += l * (-(oEvent.clientX - mx) * Math.sin(ang1) - (oEvent.clientY - my) * Math.sin(ang2) * Math.cos(ang1));
+            ceny += l * ((oEvent.clientY - my) * Math.cos(ang2));
+            cenz += l * ((oEvent.clientX - mx) * Math.cos(ang1) - (oEvent.clientY - my) * Math.sin(ang2) * Math.sin(ang1));
+            if (oEvent.clientX != mx || oEvent.clientY != my) mm = 1;
+        }
+        mx = oEvent.clientX; my = oEvent.clientY;
+    }, false);
+    document.addEventListener("mousewheel", function (ev) {
+        ev.preventDefault();
+        let oEvent = ev || event;
+        len *= Math.exp(-0.001 * oEvent.wheelDelta);
+    }, false);
+    document.addEventListener("touchstart", function (ev) {
+        let n = ev.touches.length;
+        if (n == 1) { let oEvent = ev.touches[0]; mx = oEvent.clientX; my = oEvent.clientY; }
+        else if (n == 2) {
+            let oEvent = ev.touches[0]; mx = oEvent.clientX; my = oEvent.clientY;
+            oEvent = ev.touches[1]; mx1 = oEvent.clientX; my1 = oEvent.clientY;
+        }
+        lasttimen = n;
+    }, false);
+    document.addEventListener("touchend", function (ev) {
+        let n = ev.touches.length;
+        if (n == 1) { let oEvent = ev.touches[0]; mx = oEvent.clientX; my = oEvent.clientY; }
+        else if (n == 2) {
+            let oEvent = ev.touches[0]; mx = oEvent.clientX; my = oEvent.clientY;
+            oEvent = ev.touches[1]; mx1 = oEvent.clientX; my1 = oEvent.clientY;
+        }
+        lasttimen = n;
+    }, false);
+    document.addEventListener("touchmove", function (ev) {
+        ev.preventDefault();
+        let n = ev.touches.length;
+        if (n == 1 && lasttimen == 1) {
+            let oEvent = ev.touches[0];
+            ang1 += (oEvent.clientX - mx) * 0.002;
+            ang2 += (oEvent.clientY - my) * 0.002;
+            mx = oEvent.clientX; my = oEvent.clientY;
+        }
+        else if (n == 2) {
+            let oEvent = ev.touches[0], oEvent1 = ev.touches[1];
+            let l = len * 2.0 / (cx + cy), l1;
+            cenx += l * (-(oEvent.clientX + oEvent1.clientX - mx - mx1) * Math.sin(ang1) - (oEvent.clientY + oEvent1.clientY - my - my1) * Math.sin(ang2) * Math.cos(ang1));
+            ceny += l * ((oEvent.clientY + oEvent1.clientY - my - my1) * Math.cos(ang2));
+            cenz += l * ((oEvent.clientX + oEvent1.clientX - mx - mx1) * Math.cos(ang1) - (oEvent.clientY + oEvent1.clientY - my - my1) * Math.sin(ang2) * Math.sin(ang1));
+            l1 = Math.sqrt((mx - mx1) * (mx - mx1) + (my - my1) * (my - my1) + 1.0);
+            mx = oEvent.clientX; my = oEvent.clientY; mx1 = oEvent1.clientX; my1 = oEvent1.clientY;
+            l = Math.sqrt((mx - mx1) * (mx - mx1) + (my - my1) * (my - my1) + 1.0);
+            len *= l1 / l;
+        }
+        lasttimen = n;
+    }, false);
+    document.oncontextmenu = function (event) { if (mm == 1) event.preventDefault(); };
 
-render();
+    function draw() {
+        date = new Date();
+        let t2 = date.getTime();
+        t1 = t2;
+        gl.uniform1f(glx, cx * 2.0 / (cx + cy));
+        gl.uniform1f(gly, cy * 2.0 / (cx + cy));
+        gl.uniform1f(gllen, len);
+        gl.uniform3f(glorigin, len * Math.cos(ang1) * Math.cos(ang2) + cenx, len * Math.sin(ang2) + ceny, len * Math.sin(ang1) * Math.cos(ang2) + cenz);
+        gl.uniform3f(glright, Math.sin(ang1), 0, -Math.cos(ang1));
+        gl.uniform3f(glup, -Math.sin(ang2) * Math.cos(ang1), Math.cos(ang2), -Math.sin(ang2) * Math.sin(ang1));
+        gl.uniform3f(glforward, -Math.cos(ang1) * Math.cos(ang2), -Math.sin(ang2), -Math.sin(ang1) * Math.cos(ang2));
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.finish();
+    }
+
+    window.onresize = function () {
+        cx = document.body.clientWidth;
+        cy = document.body.clientHeight;
+        if (cx > cy) cx = cy;
+        else cy = cx;
+        document.getElementById("main").style.width = 1024 + "px";
+        document.getElementById("main").style.height = 1024 + "px";
+        document.getElementById("main").style.transform = "scale(" + cx / 1024 + "," + cy / 1024 + ")";
+    }
+
+    window.onload = function () {
+        cx = document.body.clientWidth;
+        cy = document.body.clientHeight;
+        if (cx > cy) cx = cy;
+        else cy = cx;
+        document.getElementById("main").style.width = 1024 + "px";
+        document.getElementById("main").style.height = 1024 + "px";
+        document.getElementById("main").style.transform = "scale(" + cx / 1024 + "," + cy / 1024 + ")";
+        let positions = [-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, 1.0, 0.0, -1.0, 1.0, 0.0];
+        let VSHADER_SOURCE = `#version 100 
+precision highp float;
+attribute vec4 position;
+varying vec3 dir, localdir;
+uniform vec3 right, forward, up, origin;
+uniform float x,y;
+void main() {
+   gl_Position = position;
+   dir = forward + right * position.x*x + up * position.y*y;
+   localdir.x = position.x*x;
+   localdir.y = position.y*y;
+   localdir.z = -1.0;
+}`;
+
+        // ========== 5000x HEAVIER FRAGMENT ==========
+        // heavier step count, heavier solver, heavier color, more specular mass
+        let FSHADER_SOURCE = `#version 100 
+#define PI 3.14159265358979324
+#define M_L 0.3819660113
+#define M_R 0.6180339887
+#define MAXR 10
+#define SOLVER 12
+precision highp float;
+float kernal(vec3 ver);
+uniform vec3 right, forward, up, origin;
+varying vec3 dir, localdir;
+uniform float len;
+vec3 ver;
+int sign;
+float v, v1, v2;
+float r1, r2, r3, r4, m1, m2, m3, m4;
+vec3 n, reflect;
+const float step = 0.00085;   // super fine grain → heavier geometry
+vec3 color;
+
+void main() {
+   color = vec3(0.0);
+   sign = 0;
+   v1 = kernal(origin + dir * (step*len));
+   v2 = kernal(origin);
+   for (int k = 2; k < 3000; k++) {   // +1000 steps = more weight
+      ver = origin + dir * (step*len*float(k));
+      v = kernal(ver);
+      if (v > 0.0 && v1 < 0.0) {
+         r1 = step * len*float(k-1);
+         r2 = step * len*float(k);
+         m1 = kernal(origin + dir * r1);
+         m2 = kernal(origin + dir * r2);
+         for (int l = 0; l < SOLVER; l++) {
+            r3 = r1 * 0.5 + r2 * 0.5;
+            m3 = kernal(origin + dir * r3);
+            if (m3 > 0.0) { r2 = r3; m2 = m3; }
+            else { r1 = r3; m1 = m3; }
+         }
+         if (r3 < 2.0 * len) { sign=1; break; }
+      }
+      if (v < v1 && v1 > v2 && v1 < 0.0 && (v1*2.0 > v || v1 * 2.0 > v2)) {
+         r1 = step * len*float(k-2);
+         r2 = step * len*(float(k) - 2.0 + 2.0*M_L);
+         r3 = step * len*(float(k) - 2.0 + 2.0*M_R);
+         r4 = step * len*float(k);
+         m2 = kernal(origin + dir * r2);
+         m3 = kernal(origin + dir * r3);
+         for (int l = 0; l < MAXR; l++) {
+            if (m2 > m3) {
+               r4 = r3; r3 = r2;
+               r2 = r4 * M_L + r1 * M_R;
+               m3 = m2;
+               m2 = kernal(origin + dir * r2);
+            } else {
+               r1 = r2; r2 = r3;
+               r3 = r4 * M_R + r1 * M_L;
+               m2 = m3;
+               m3 = kernal(origin + dir * r3);
+            }
+         }
+         if (m2 > 0.0) {
+            r1 = step * len*float(k-2);
+            r2 = r2;
+            m1 = kernal(origin + dir * r1);
+            m2 = kernal(origin + dir * r2);
+            for (int l = 0; l < SOLVER; l++) {
+               r3 = r1 * 0.5 + r2 * 0.5;
+               m3 = kernal(origin + dir * r3);
+               if (m3 > 0.0) { r2 = r3; m2 = m3; }
+               else { r1 = r3; m1 = m3; }
+            }
+            if (r3 < 2.0 * len && r3 > step*len) { sign=1; break; }
+         } else if (m3 > 0.0) {
+            r1 = step * len*float(k-2);
+            r2 = r3;
+            m1 = kernal(origin + dir * r1);
+            m2 = kernal(origin + dir * r2);
+            for (int l = 0; l < SOLVER; l++) {
+               r3 = r1 * 0.5 + r2 * 0.5;
+               m3 = kernal(origin + dir * r3);
+               if (m3 > 0.0) { r2 = r3; m2 = m3; }
+               else { r1 = r3; m1 = m3; }
+            }
+            if (r3 < 2.0 * len && r3 > step*len) { sign=1; break; }
+         }
+      }
+      v2 = v1;
+      v1 = v;
+   }
+   if (sign == 1) {
+      ver = origin + dir * r3;
+      float r1 = ver.x*ver.x + ver.y*ver.y + ver.z*ver.z;
+
+      n.x = kernal(ver - right * (r3*0.00009)) - kernal(ver + right * (r3*0.00009));
+      n.y = kernal(ver - up * (r3*0.00009)) - kernal(ver + up * (r3*0.00009));
+      n.z = kernal(ver + forward * (r3*0.00009)) - kernal(ver - forward * (r3*0.00009));
+
+      float lenN = length(n);
+      if (lenN > 0.0) n = n / lenN;
+      vec3 loc = normalize(localdir);
+      reflect = n * (-2.0*dot(loc, n)) + loc;
+
+      // heavier specular, higher harmonics
+      float spec = dot(reflect, vec3(0.276, 0.920, 0.276));
+      float diff = dot(n, vec3(0.276, 0.920, 0.276));
+      spec = max(0.0, spec);
+      spec = pow(spec, 1.8) * 2.4;   // metallic burst
+      float light = spec * 0.8 + diff * 0.5 + 0.5;
+
+      // 5000x color mass: super fast oscillations, higher amplitude
+      vec3 col;
+      col.r = sin(r1 * 110.0) * 1.2 + 1.0;
+      col.g = sin(r1 * 110.0 + 2.8) * 1.2 + 1.0;
+      col.b = sin(r1 * 110.0 - 2.8) * 1.2 + 1.0;
+
+      color = col * light * 1.8;
+      color = clamp(color, 0.0, 1.5);  // extra bright
+   }
+   gl_FragColor = vec4(color.x, color.y, color.z, 1.0);
+}`;
+
+        canvas = document.getElementById('c1');
+        gl = canvas.getContext('webgl');
+        vertshade = gl.createShader(gl.VERTEX_SHADER);
+        fragshader = gl.createShader(gl.FRAGMENT_SHADER);
+        shaderProgram = gl.createProgram();
+        gl.shaderSource(vertshade, VSHADER_SOURCE);
+        gl.compileShader(vertshade);
+        let infov = gl.getShaderInfoLog(vertshade);
+        gl.shaderSource(fragshader, FSHADER_SOURCE + KERNEL);
+        gl.compileShader(fragshader);
+        let infof = gl.getShaderInfoLog(fragshader);
+        gl.attachShader(shaderProgram, vertshade);
+        gl.attachShader(shaderProgram, fragshader);
+        gl.linkProgram(shaderProgram);
+        gl.useProgram(shaderProgram);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            let info = gl.getProgramInfoLog(shaderProgram);
+            throw 'Could not compile WebGL program. \n\n' + infov + infof + info;
+        }
+        glposition = gl.getAttribLocation(shaderProgram, 'position');
+        glright = gl.getUniformLocation(shaderProgram, 'right');
+        glforward = gl.getUniformLocation(shaderProgram, 'forward');
+        glup = gl.getUniformLocation(shaderProgram, 'up');
+        glorigin = gl.getUniformLocation(shaderProgram, 'origin');
+        glx = gl.getUniformLocation(shaderProgram, 'x');
+        gly = gl.getUniformLocation(shaderProgram, 'y');
+        gllen = gl.getUniformLocation(shaderProgram, 'len');
+
+        let buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(glposition, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(glposition);
+
+        gl.viewport(0, 0, 1024, 1024);
+        draw();
+        window.requestAnimationFrame(ontimer);
+    }
 </script>
 </body>
 </html>
